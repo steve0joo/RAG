@@ -98,6 +98,6 @@ streamlit run PDF-based_QA/main.py
 
 ## What did we use RAG?
 
-1️⃣ You can save the document in the internal DB and accumulate the contents.
-2️⃣ Write an answer based on the content of the document → Return to the document and verify the answered content.
+1️⃣ You can save the document in the internal DB and accumulate the contents.  
+2️⃣ Write an answer based on the content of the document → Return to the document and verify the answered content.  
 3️⃣ You can expect better answer quality (low halulation), and it is possible to create a domain-specific chatbot that answers based on extensive knowledge.
