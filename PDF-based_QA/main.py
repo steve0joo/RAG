@@ -9,14 +9,15 @@ from langchain_community.document_loaders import PDFPlumberLoader
 from langchain_community.vectorstores import FAISS
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
-from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_teddynote import logging
 from dotenv import load_dotenv
-import glob # 특정한 문자규칙을 주면 해당 규칙 내의 모든 특정 파일을 가져와서 목록을 만든다
 import os
 
 # API KEY load-information(정보로드)
 load_dotenv()
+
+logging.langsmith("[Project] PDF-RAG")
 
 # create cache directory
 if not os.path.exists(".cache"):
@@ -43,10 +44,12 @@ if "chain" not in st.session_state:
 with st.sidebar:
     # reset button
     clear_btn = st.button("Reset Conversation")
+
     # file uploader
     uploaded_file = st.file_uploader("Choose a file", type=["pdf"])
 
-    selected_prompts = "prompts/pdf-rag.yaml"
+    # select model
+    selected_model = st.selectbox("Select LLM", ["gpt-4o", "gpt-4o-mini", "gpt-5", "gpt-5-mini"], index=0)
 
 # print previous conversations
 def print_messages():
@@ -87,25 +90,12 @@ def embed_file(file):
 
 
 # create chain
-def create_chain(retriever):
-    # prompt = load_prompt(prompt_filepath, encoding="utf-8")
+def create_chain(retriever, model_name="gpt-4o"):
     # 6. Create Prompt
-    prompt = PromptTemplate.from_template(
-        """ You are an assistant for for question-answering tasks. 
-    Use the following pieces of retrieved context to answer the question. 
-    If you don't know the answer, just say that you don't know. 
-
-    #Context:
-    {context}
-
-    #Question:
-    {question}
-
-    #Answer:"""
-    )
+    prompt = load_prompt("prompts/pdf-rag.yaml", encoding="utf-8")
 
     # 7. LLM 
-    llm = ChatOpenAI(model_name="gpt-4.1-mini", temperature=0)
+    llm = ChatOpenAI(model_name=model_name, temperature=0)
 
     # 8. 체인(Chain) 생성
     # 질문을 입력하면 질문이 retriever로 들어가서 문서검색이 되고 context로 입력된다
@@ -124,7 +114,7 @@ def create_chain(retriever):
 if uploaded_file:
     # after uploading file, create retriever (time-consuming)
     retriever = embed_file(uploaded_file)
-    chain = create_chain(retriever)
+    chain = create_chain(retriever, model_name=selected_model)
     st.session_state["chain"] = chain
 
 
@@ -139,7 +129,7 @@ print_messages()
 # User's Input 
 user_input = st.chat_input("Say something")
 
-# empty container for warring message
+# empty container for warning message
 warning_msg = st.empty()
 
 # if user's input entered
